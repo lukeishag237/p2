@@ -36,7 +36,18 @@ static void RedirectSolnOutput(SolnDataT *SolnData)
      *      + Permission Hints: 0644
      *      + Hint: You can use SolnData->OutputFilePath as the file path to open
      */
+    int fd = open(SolnData->OutputFilePath, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd < 0) {
+        perror("Failed to open output file");
+    }
 
+    if (dup2(fd, STDOUT_FILENO) < 0) {
+        perror("dup2 failed");
+    }
+
+    if(close(fd)<0){
+        perror("close failed");
+    }
     return;
 
 }
@@ -100,18 +111,23 @@ static void NO_RETURN RunSoln_Redirect(SolnDataT *SolnData)
 static void NO_RETURN RunSoln_Pipe(SolnDataT *SolnData)
 {
     int pipefds[2] = {0, 0};
-
-
     /**
      * TODO => Change B:
      *      + Open a pipe, write the input paramater to the write end of the pipe and close it
      *      + Allow the provided code to pass the file descriptor of the pipe read end to the soln proc
      */
-
-
-
-
-    
+    int pipe_result = pipe(pipefds);
+    if (pipe_result < 0){
+        perror("Pipe Failed");
+    }
+    int write_result = write(pipefds[1], SolnData->InputParamStr,MAX_PARAM_LEN);
+    if (write_result < 0){
+        perror("Write Failed");
+    }
+    int close_result = close(pipefds[1]);
+    if (close_result < 0){
+        perror("Close Failed");
+    }
 
     /* ------------------------------ PROVIDED CODE ----------------------------- */
 
